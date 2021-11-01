@@ -1,18 +1,17 @@
 % LMIE of the i-th & j-th mode in k-th node equation #11 (IFAC20_3230_MS.pdf)
 
 function[Eckij] = funEckij(Vseq,Wseq,Dseq,number_ith_mode,number_jth_mode,...
-    number_of_matrix, number_of_c,c_v)
+    number_of_matrix, number_of_c,c_v,x0)
 
-%   Eckij - ГЅГ­ГҐГ°ГЈГЁГї Г‹ГїГЇГіГ­Г®ГўГ  ГўГ®Г§Г¬ГіГ№ГҐГ­ГЁГї ГЇГ® ГЇГ Г°Г Г¬ГҐГІГ°Гі "Г±" Г­Г  k-Г®Г¬ ГЅГ«ГҐГ¬ГҐГ­ГІГҐ Г®ГІ
-%   ГЇГ Г°Г» i-Г®Г© ГЁ j-Г®Г© Г¬Г®Г¤Г»
-%   c - Г¬Г ГІГ°ГЁГ¶Г  Г­Г ГЎГ«ГѕГ¤ГҐГ­ГЁГї Г±Г®Г®ГІГўГҐГІГ±ГІГўГіГѕГ№ГҐГЈГ® ГЇГ Г°Г Г¬ГҐГІГ°Г  (Г­Г ГЇГ°ГїГ¦ГҐГ­ГЁГ© Гў ГіГ§Г«Г Гµ
-%   Г«ГЁГЎГ® ГЇГҐГ°ГҐГІГ®ГЄГ®Гў Г¬Г®Г№Г­Г®Г±ГІГЁ Г­Г  Г«ГЁГ­ГЁГїГµ)
+%   Eckij - энергия Ляпунова возмущения по параметру "с" на k-ом элементе от
+%   пары i-ой и j-ой моды
+%   c - матрица наблюдения соответствующего параметра (напряжений в узлах
+%   либо перетоков мощности на линиях)
 try
     %processing status
-    f = waitbar(0,'Starting...','Name','EГ±kij calculation...',...
+    f = waitbar(0,'Starting...','Name','Eсkij calculation...',...
         'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
     setappdata(f,'canceling',0);
-
     Eckij = zeros(length(number_of_c),length(number_of_matrix));
     ons = ones(size(c_v,1),1);
     ek = diag(ons);
@@ -25,7 +24,32 @@ try
     tmp_denom = -1 ./ (conjD + Dseq (jth,:));
     ith = number_ith_mode;
     na = 0;
-    for a = number_of_matrix
+    x0_tr = x0.';
+    if isempty(x0)
+        for a = number_of_matrix
+            % Check for clicked Cancel button
+            if getappdata(f,'canceling')
+                break
+            end
+            na = na + 1;
+            Ri = Vseq(:,ith,a) * trW(ith,:,a);
+            conjtrRi = Ri';
+            Rj = Vseq(:,jth,a) * trW(jth,:,a);
+            denom = tmp_denom (ith,a);
+            Rjdenom = Rj * denom;
+            for kth = number_of_c
+                nn = nn + 1;
+                Qk = conjtr_cv(:,:,a) * ek(:,kth) * tr_ek(kth,:) * c_v(:,:,a);
+                Pvkij = conjtrRi * Qk * Rjdenom;
+                Eckij(nn,na) = real(trace(Pvkij));
+            end
+            nn = 0;
+            % Update waitbar and message
+            d_step = na/length(number_of_matrix);
+            waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
+        end
+    else
+       for a = number_of_matrix
         % Check for clicked Cancel button
         if getappdata(f,'canceling')
             break
@@ -40,17 +64,18 @@ try
             nn = nn + 1;
             Qk = conjtr_cv(:,:,a) * ek(:,kth) * tr_ek(kth,:) * c_v(:,:,a);
             Pvkij = conjtrRi * Qk * Rjdenom;
-            Eckij(nn,na) = real(trace(Pvkij));
+            Eckij(nn,na) = real(x0_tr * (Pvkij) * x0);
         end
         nn = 0;
         % Update waitbar and message
         d_step = na/length(number_of_matrix);
         waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
+       end
     end
     delete(f)
 
-% ГЏГ°ГЁ ГўГ®Г§Г­ГЁГЄГ­Г®ГўГҐГ­ГЁГЁ Г«ГѕГЎГ®Г© Г®ГёГЁГЎГЄГЁ ГіГЎГЁГ°Г ГҐГ¬ ProgressBar ГЁ ГўГ®Г§ГўГ°Г Г№Г ГҐГ¬
-% Г±Г®Г®ГЎГ№ГҐГ­ГЁГҐ Г®ГЎ Г®ГёГЁГЎГЄГҐ ГЁ Г­Г®Г¬ГҐГ° Г±ГІГ°Г®ГЄГЁ Г± Г®ГёГЁГЎГЄГ®Г©
+% При возникновении любой ошибки убираем ProgressBar и возвращаем
+% сообщение об ошибке и номер строки с ошибкой
 catch MExc
     delete(f)
     err = MExc.stack;

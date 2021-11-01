@@ -1,5 +1,5 @@
 function [Ecki] = funEcki(Aseq,number_of_c,number_of_mode,number_of_matrix,...
-    c,Vseq,Wseq,Dseq)
+    c,Vseq,Wseq,Dseq,x0)
 
 %   Ecki - энерги€ Ћ€пунова возмущени€ по параметру "с" на k-ом элементе от
 %   i-ой моды
@@ -8,6 +8,7 @@ function [Ecki] = funEcki(Aseq,number_of_c,number_of_mode,number_of_matrix,...
 %   линий (дл€ перетоков)
 %   c - матрица наблюдени€ соответствующего параметра (напр€жений в узлах
 %   либо перетоков мощности на лини€х)
+%   x0 - вектор начальных условий
 try
      %processing status
     f = waitbar(0,'Starting...','Name','Eсki calculation...',...
@@ -16,16 +17,31 @@ try
     
     Ecki = zeros(length(number_of_c),length(number_of_mode),...
         length(number_of_matrix));
-    for a = number_of_matrix
-        % Check for clicked Cancel button
-        if getappdata(f,'canceling')
-            break
+    x0_tr = x0.';
+    if isempty (x0)
+        for a = number_of_matrix
+            % Check for clicked Cancel button
+            if getappdata(f,'canceling')
+                break
+            end
+            [Ecki(:,:,a)] = funEcki_ones(Aseq(:,:,a),number_of_c,number_of_mode,...
+            c(:,:,a),Vseq(:,:,a),Wseq(:,:,a),Dseq(:,a));
+            % Update waitbar and message
+            d_step = a/length(number_of_matrix);
+            waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
         end
-        [Ecki(:,:,a)] = funEcki_ones(Aseq(:,:,a),number_of_c,number_of_mode,...
-        c(:,:,a),Vseq(:,:,a),Wseq(:,:,a),Dseq(:,a));
-        % Update waitbar and message
-        d_step = a/length(number_of_matrix);
-        waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
+    else
+        for a = number_of_matrix
+            % Check for clicked Cancel button
+            if getappdata(f,'canceling')
+                break
+            end
+            [Ecki(:,:,a)] = funEcki_ones_x0(Aseq(:,:,a),number_of_c,number_of_mode,...
+            c(:,:,a),Vseq(:,:,a),Wseq(:,:,a),Dseq(:,a),x0,x0_tr);
+            % Update waitbar and message
+            d_step = a/length(number_of_matrix);
+            waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
+        end
     end
     Ecki = permute(real(Ecki),[1 3 2]);
     delete(f)
