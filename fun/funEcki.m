@@ -1,36 +1,47 @@
 function [Ecki] = funEcki(Aseq,number_of_c,number_of_mode,number_of_matrix,...
     c,Vseq,Wseq,Dseq)
 
-%   Ecki - ГЅГ­ГҐГ°ГЈГЁГї Г‹ГїГЇГіГ­Г®ГўГ  ГўГ®Г§Г¬ГіГ№ГҐГ­ГЁГї ГЇГ® ГЇГ Г°Г Г¬ГҐГІГ°Гі "Г±" Г­Г  k-Г®Г¬ ГЅГ«ГҐГ¬ГҐГ­ГІГҐ Г®ГІ
-%   i-Г®Г© Г¬Г®Г¤Г»
-%   Aseq - Г­Г ГЎГ®Г° Г¬Г ГІГ°ГЁГ¶ Г¤ГЁГ­Г Г¬ГЁГЄГЁ
-%   number_of_c - Г¤ГЁГ ГЇГ Г§Г®Г­ Г­Г®Г¬ГҐГ°Г®Гў ГіГ§Г«Г®Гў (Г¤Г«Гї Г­Г ГЇГ°ГїГ¦ГҐГ­ГЁГ©), Г«ГЁГЎГ® Г­Г®Г¬ГҐГ°Г®Гў 
-%   Г«ГЁГ­ГЁГ© (Г¤Г«Гї ГЇГҐГ°ГҐГІГ®ГЄГ®Гў)
-%   c - Г¬Г ГІГ°ГЁГ¶Г  Г­Г ГЎГ«ГѕГ¤ГҐГ­ГЁГї Г±Г®Г®ГІГўГҐГІГ±ГІГўГіГѕГ№ГҐГЈГ® ГЇГ Г°Г Г¬ГҐГІГ°Г  (Г­Г ГЇГ°ГїГ¦ГҐГ­ГЁГ© Гў ГіГ§Г«Г Гµ
-%   Г«ГЁГЎГ® ГЇГҐГ°ГҐГІГ®ГЄГ®Гў Г¬Г®Г№Г­Г®Г±ГІГЁ Г­Г  Г«ГЁГ­ГЁГїГµ)
-
- %processing status
-f = waitbar(0,'Starting...','Name','EГ±ki calculation...',...
-    'CreateCancelBtn','setappdata(gcbf,''canceling'',0)');
-
-setappdata(f,'canceling',0);
-
-Ecki = zeros(length(number_of_c),length(number_of_mode),...
-    length(number_of_matrix));
-for a = number_of_matrix
-    % Check for clicked Cancel button
-    if getappdata(f,'canceling')
-        break
-    end
+%   Ecki - энергия Ляпунова возмущения по параметру "с" на k-ом элементе от
+%   i-ой моды
+%   Aseq - набор матриц динамики
+%   number_of_c - диапазон номеров узлов (для напряжений), либо номеров 
+%   линий (для перетоков)
+%   c - матрица наблюдения соответствующего параметра (напряжений в узлах
+%   либо перетоков мощности на линиях)
+try
+     %processing status
+    f = waitbar(0,'Starting...','Name','Eсki calculation...',...
+        'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+    setappdata(f,'canceling',0);
     
-    [Ecki(:,:,a)] = funEcki_ones(Aseq(:,:,a),number_of_c,number_of_mode,...
-    c(:,:,a),Vseq(:,:,a),Wseq(:,:,a),Dseq(:,a));
+    Ecki = zeros(length(number_of_c),length(number_of_mode),...
+        length(number_of_matrix));
+    for a = number_of_matrix
+        % Check for clicked Cancel button
+        if getappdata(f,'canceling')
+            break
+        end
+        [Ecki(:,:,a)] = funEcki_ones(Aseq(:,:,a),number_of_c,number_of_mode,...
+        c(:,:,a),Vseq(:,:,a),Wseq(:,:,a),Dseq(:,a));
+        % Update waitbar and message
+        d_step = a/length(number_of_matrix);
+        waitbar(d_step,f,sprintf('%d%%',round(d_step*100)))
+    end
+    Ecki = permute(real(Ecki),[1 3 2]);
+    delete(f)
 
-    % Update waitbar and message
-    waitbar(a/length(number_of_matrix),f,sprintf('%d%%',a))
+% При возникновении любой ошибки убираем ProgressBar и возвращаем
+% сообщение об ошибке и номер строки с ошибкой
+catch MExc
+    delete(f)
+    err = MExc.stack;
+    number_of_names = size(err,1);
+    for k = 1:number_of_names
+        name_of_error_function (k,1) = string(err(k).name);
+        number_of_error_line (k,1) = string(err(k).line);
+    end
+    table(name_of_error_function,number_of_error_line)
+    throw(MExc)
 end
 
-Ecki = permute(Ecki,[1 3 2]);
-
-delete(f)
 end
