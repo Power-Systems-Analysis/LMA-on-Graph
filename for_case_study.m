@@ -3,15 +3,16 @@
 % LMA_on_graph с таким содержанием:
 % 1. eigenshuffle_rl.m - сортировка собственных значений и векторов
 % 2. funEck_trace.m - вычисление L2-нормы возмущения
-% 3. funEcki.m - вычисление модального вклада (использует funEcki_ones.m)
+% 3. funEcki.m - вычисление модального вклада (использует funEcki_ones(_x0).m)
 % 4. funEcki_ones.m
-% 5. funEckii.m - несимметризованные модальные взаимодействия моды i с i
-% 6. funEckii_sym.m - симметризованные модальные взаимодействия моды i с i
-% 7. funEckij.m - несимметризованное модальное взаимодействие моды i с j
-% 8. funEckij_sym.m - симметризованное модальное взаимодействие моды i с j
-% 9. graphEvki.m - построение графа для модального вклада
-% 10. graphEvkij.m - построение графа для модального взаимодействия
-% 11. norm_eigen.m - нормировка собственных векторов
+% 5. funEcki_ones_x0.m
+% 6. funEckii.m - несимметризованные модальные взаимодействия моды i с i
+% 7. funEckii_sym.m - симметризованные модальные взаимодействия моды i с i
+% 8. funEckij.m - несимметризованное модальное взаимодействие моды i с j
+% 9. funEckij_sym.m - симметризованное модальное взаимодействие моды i с j
+% 10. graphEvki.m - построение графа для модального вклада
+% 11. graphEvkij.m - построение графа для модального взаимодействия
+% 12. norm_eigen.m - нормировка собственных векторов
 %% 1. Загружаем набор линеаризованных моделей
 
 clear all
@@ -51,19 +52,27 @@ n_node = 1 : linmod.number_of_node;   % scalar or vector
 n_mode = 1 : linmod.number_of_mode;   % scalar or vector
 n_mat = 1:linmod.number_of_models;     % scalar or vector
 
+% для сферически-симметричных начальных условий
+x0 = [];
+
+% для произвольных начальных условий
+% x0 = zeros(linmod.number_of_mode,1);
+% x0([1 12:13 24:25 36:37 48:49 60:61 72:73 84:85 ...
+%     96:97 108:109 120:121 132:133 144:145 150:151 156:157 162:163]) = 1;
+
 % 2.4. Задаём номера мод для модального взаимодействия (только скаляры)
-n_imode = 4;   % scalar
+n_imode = 26;   % scalar
 n_jmode = 26;   % scalar
 
-% 2.5. Модальный вклад 
+% 2.5. Модальный вклад
 [LMA.Ecki] = funEcki(linmod.Aseq,n_node,n_mode,n_mat,c,...
-    linmod.Vseq,linmod.Wseq,linmod.Dseq);
+    linmod.Vseq,linmod.Wseq,linmod.Dseq,x0);
 
 % 2.6. Модальное взаимодействие
 [LMA.Eckij] = funEckij(linmod.Vseq,linmod.Wseq,linmod.Dseq,...
-    n_imode,n_jmode,n_mat,n_node,c);
+    n_imode,n_jmode,n_mat,n_node,c,x0);
 [LMA.Eckij_sym] = funEckij_sym(linmod.Vseq,linmod.Wseq,linmod.Dseq,...
-    n_imode,n_jmode,n_mat,n_node,c);
+    n_imode,n_jmode,n_mat,n_node,c,x0);
 
 LMA.Description.Ecki = ['Ненормированный и несимметризованный модальный вклад'...
     ' [номер узла или линии  х  номер модели  х  номер моды]'];
@@ -83,16 +92,24 @@ c = linmod.C.c_v;   % for voltage magnitude
 %c = linmod.C.c_pf1;  % for power flow
 %c = linmod.C.c_ang; % for voltage angle
 
-% 3.3. Задаём номера узлов и номера моделей
+% 3.3. Задаём номера узлов, номера моделей и вектор начальных условий x0
 n_node = 1 : linmod.number_of_node;   % scalar or vector
 n_mat = 1:linmod.number_of_models;     % scalar (quick) or vector (slow)
+
+% для сферически-симметричных начальных условий
+x0 = [];
+
+% для произвольных начальных условий
+%x0 = zeros(linmod.number_of_mode,1);
+%x0([1 12:13 24:25 36:37 48:49 60:61 72:73 84:85 ...
+%    96:97 108:109 120:121 132:133 144:145 150:151 156:157 162:163]) = 1;
 
 % 3.4. Задаём номера мод для модального взаимодействия (только скаляры)
 n_imode = 4;   % scalar
 n_jmode = 26;   % scalar
 
 % 3.5. Вычисление L2-нормы напряжения в узле n_node для модели n_mat
-[LMA.Eck] = funEck_trace(linmod.Aseq,n_node,n_mat,c);
+[LMA.Eck] = funEck_trace(linmod.Aseq,n_node,n_mat,c,x0);
 
 % 3.6. Рассчитываем взаимодействие каждой моды с собой в узле n_node для модели n_mat
 LMA.Eckii = funEckii(linmod,n_mat,n_node,c);% [nodes, modes, matrix]
@@ -237,12 +254,39 @@ clear n n_mode n_model norm_set nodelabel_set
 
 
 %% 7. Графики
-figure()    %Eck
-plotEck = plot (linmod.var_par,LMA.Eck(:,:)); %Eck[number_of_c, number matrix a]
+%% Eck [nodes, models]
+figure()
+plotEck = plot (linmod.var_par,LMA.Eck(:,:));
 grid minor
 title('L2-норма фазы напряжения по узлам')
 for i = 1 : size(linmod.C.c_v,1,1)
     set(plotEck(i),'DisplayName',['Node',num2str(i)]);
+end
+
+%% Ecki [nodes, models, modes]
+figure()
+plotEcki = plot (linmod.var_par,squeeze(LMA.Ecki(40,:,:)));
+grid minor
+title('Модальные вклады в узел 40')
+for i = 1 : linmod.number_of_mode%size(linmod.C.c_v,1,1)
+    set(plotEcki(i),'DisplayName',['Mode',num2str(i)]);
+end
+%% Eci [nodes, models, modes]
+figure()
+plotEcki = plot (linmod.var_par,squeeze(sum(LMA.Ecki,1)));
+grid minor
+title('Суммарный модальный вклад каждой моды во все узлы')
+for i = 1 : linmod.number_of_mode
+    set(plotEcki(i),'DisplayName',['Mode',num2str(i)]);
+end
+
+%% Eckij [nodes, models]
+figure()
+plotEckij = plot (linmod.var_par,LMA.Eckij_sym);
+grid minor
+title('Симмитризованное ненормированное модальное взаимодействие моды М4 с остальными в узле 50')
+for i = 1 : 167%size(linmod.C.c_v,1,1)
+    set(plotEckij(i),'DisplayName',['Node',num2str(i)]);
 end
 %%                             ФУНКЦИИ
 
