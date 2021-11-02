@@ -18,6 +18,15 @@ addpath([pwd,'\LMA_on_graph']);
 MI.Option.n_imode = 4;
 MI.Option.n_jmode = 26;
 
+% 2.2. ¬ыбираем начальные услови€
+% дл€ сферически-симметричных начальных условий
+MI.Option.x0 = [];
+
+% дл€ произвольных начальных условий (задаЄм нужную структуру вектора x0)
+% x0 = zeros(linmod.number_of_mode,1);
+% x0([1 12:13 24:25 36:37 48:49 60:61 72:73 84:85 ...
+%     96:97 108:109 120:121 132:133 144:145 150:151 156:157 162:163]) = 1;
+
 % 2.3. ¬ычисл€ем несимметризованное и симметризованное модальное
 % взаимодействие дл€ амплитуд и фаз
 
@@ -27,18 +36,18 @@ MI.Option.n_mat = 1 : linmod.number_of_models;
 % дл€ амплитуды
 [MI.VoltageMagnitude.Eckij] = funEckij(linmod.Vseq,linmod.Wseq,linmod.Dseq,...
     MI.Option.n_imode,MI.Option.n_jmode,MI.Option.n_mat,MI.Option.n_node,...
-    linmod.C.c_v);
+    linmod.C.c_v,MI.Option.x0);
 [MI.VoltageMagnitude.Eckij_sym] = funEckij_sym(linmod.Vseq,linmod.Wseq,...
     linmod.Dseq,MI.Option.n_imode,MI.Option.n_jmode,MI.Option.n_mat,...
-    MI.Option.n_node,linmod.C.c_v);
+    MI.Option.n_node,linmod.C.c_v,MI.Option.x0);
 
 % дл€ фазы
 [MI.VoltageAngle.Eckij] = funEckij(linmod.Vseq,linmod.Wseq,linmod.Dseq,...
     MI.Option.n_imode,MI.Option.n_jmode,MI.Option.n_mat,MI.Option.n_node,...
-    linmod.C.c_ang);
+    linmod.C.c_ang,MI.Option.x0);
 [MI.VoltageAngle.Eckij_sym] = funEckij_sym(linmod.Vseq,linmod.Wseq,...
     linmod.Dseq,MI.Option.n_imode,MI.Option.n_jmode,MI.Option.n_mat,...
-    MI.Option.n_node,linmod.C.c_ang);
+    MI.Option.n_node,linmod.C.c_ang,MI.Option.x0);
 
 %% 3. —троим граф модального взаимодействи€ дл€ мод n_imode и n_jmode дл€ модели n_model
 norm_set = 1; % вариант нормировани€ величины выбранного параметра: 
