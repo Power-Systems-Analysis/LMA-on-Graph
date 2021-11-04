@@ -1,27 +1,31 @@
 function graphEvki(n_mat,n_mode,norm_set,line_set,nodelabel_set,Ecki,linmod)
-
-if norm_set == 1 
-%   нормирование относительно своего максимума при фиксированном k
     na = n_mat;
     nm = n_mode;
+if isempty(norm_set)
+    tmpEcki = Ecki(:,na,nm);
+    CLim = [min(tmpEcki) max(tmpEcki)];
+elseif norm_set == 1 
+%   нормирование относительно своего максимума при фиксированном k
     tmpEcki = Ecki(:,na,nm);
     maxEcki = max(abs(tmpEcki));
     for i = 1:size(tmpEcki,1)
         tmpEcki(i) = tmpEcki(i) / maxEcki;
     end
-else
+    if min(tmpEcki) < 0
+        CLim = [-1 1]; % пределы шкалы ColorBar
+    else
+        CLim = [0 1];
+    end
+elseif norm_set == 0
 %   нормирование относительно своего максимума при всех k
-    na = n_mat;
-    nm = n_mode;
     tmpEcki = squeeze(Ecki(:,:,nm));
     maxEcki = max(max(abs(tmpEcki)));
     tmpEcki = tmpEcki(:,na) ./ maxEcki;
-end
-
-if min(tmpEcki) < 0
-    CLim = [-1 1]; % пределы шкалы ColorBar
-else
-    CLim = [0 1];
+    if min(tmpEcki) < 0
+        CLim = [-1 1]; % пределы шкалы ColorBar
+    else
+        CLim = [0 1];
+    end
 end
 
 edg1 = linmod.line(:,1);
