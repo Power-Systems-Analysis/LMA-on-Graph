@@ -180,6 +180,74 @@ LMA.Description.fkij_L2_sym = ['Фактор нормированного симметризованного модально
 clear c n_node n_mat num_i tmp_pki_L2 tmp_pki_L2_sym tmp_eck_ij tmp_eck_ij_sym
 %% 4. Строим графы
 % 4.1. Строим граф модального вклада для мод n_mode для модели n_model
+norm_set = []; % вариант нормирования величины выбранного параметра: 
+%                   1 - относительно максимума, определенного в пределах 
+%                       значений для одной фиксированной матрицы динамики;
+%                   0 - относительно максимума, определенного в пределах 
+%                       значений для всех матриц динамики;
+%                  [] - нормирование не выполняется
+line_set = 0; % вариант расчета надписей над рёбрами:
+%                   1 - число над ребром рассчитывается как разница узловых 
+%                       напряжений между большим и меньшим номером узла
+%                   0 - надписей над рёбрами нет
+nodelabel_set = 0; % вариант надписи в узлах: 
+%                   1 - в узлах отображаются номера узлов;
+%                   0 - в узлах отображаются величины выбранного параметра
+n_mode = 26; % задать нужный номер моды
+n_model = 50; % задать порядковый номер линеаризованной модели из вектора n_mat
+
+% выбрать нужный вариант нормировки и симметризации
+%Ecki = LMA.Ecki;
+%Ecki = LMA.Ecki_norm;
+%Ecki = LMA.Ecki_norm_sym;
+Ecki = LMA.Ecki ./ LMA.Eck;
+
+graphEvki(n_model,n_mode,norm_set,line_set,nodelabel_set,Ecki,linmod);
+clear Ecki norm_set line_set n_model n_mode nodelabel_set
+%% 4.2. Строим граф модального взаимодействия для мод n_imode и n_jmode для модели n_model
+
+norm_set = []; % вариант нормирования величины выбранного параметра: 
+%                   1 - относительно максимума, определенного в пределах 
+%                       значений для одной фиксированной матрицы динамики;
+%                   0 - относительно максимума, определенного в пределах 
+%                       значений для всех матриц динамики;
+%                  [] - нормирование не выполняется
+nodelabel_set = 0; % вариант надписи в узлах: 
+%                   1 - в узлах отображаются номера узлов;
+%                   0 - в узлах отображаются величины выбранного параметра
+n_model = 50; % задать порядковый номер линеаризованной модели из вектора n_mat
+
+% выбрать нужный вариант нормировки и симметризации
+%Eckij = LMA.Eckij;
+%Eckij = LMA.Eckij_sym;
+%Eckij = LMA.Eckij_norm;
+%Eckij = LMA.Eckij_norm_sym;
+Eckij = LMA.Eckij ./ LMA.Eck;
+
+graphEvkij(n_model,n_imode,n_jmode,norm_set,nodelabel_set,Eckij,linmod);
+clear Eckij norm_set n_model nodelabel_set
+
+%% 4.3. Строим граф L2-нормы
+norm_set = 1; % вариант нормирования величины выбранного параметра: 
+%                   1 - относительно максимума, определенного в пределах 
+%                       значений Evki для одной фиксированной матрицы А;
+%                   0 - относительно максимума, определенного в пределах 
+%                       значений Evki для всех матриц А.
+line_set = 0; % вариант расчета надписей над рёбрами:
+%                   1 - число над ребром рассчитывается как разница узловых 
+%                       напряжений между большим и меньшим номером узла
+%                   0 - надписей над рёбрами нет
+nodelabel_set = 0; % вариант надписи в узлах: 
+%                   1 - в узлах отображаются номера узлов;
+%                   0 - в узлах отображаются величины выбранного параметра
+n_model = 52; % задать порядковый номер линеаризованной модели из вектора n_mat
+
+Eck = LMA.Eck;
+
+graphEvki(n_model,1,norm_set,line_set,nodelabel_set,Eck,linmod);
+clear Eck norm_set line_set n_model n_mode nodelabel_set
+
+%% 4.4. Строим граф pki
 norm_set = 1; % вариант нормирования величины выбранного параметра: 
 %                   1 - относительно максимума, определенного в пределах 
 %                       значений Evki для одной фиксированной матрицы А;
@@ -193,34 +261,34 @@ nodelabel_set = 0; % вариант надписи в узлах:
 %                   1 - в узлах отображаются номера узлов;
 %                   0 - в узлах отображаются величины выбранного параметра
 n_mode = 26; % задать нужный номер моды
-n_model = 1; % задать порядковый номер линеаризованной модели из вектора n_mat
+n_model = 50; % задать порядковый номер линеаризованной модели из вектора n_mat
 
-% выбрать нужный вариант нормировки и симметризации
-Ecki = LMA.Ecki;
-%Ecki = LMA.Ecki_norm;
-%Ecki = LMA.Ecki_norm_sym;
+% выбрать нужный вариант симметризации
+%pki = LMA.pki_L2;
+pki = LMA.pki_L2_sym;
 
-graphEvki(n_model,n_mode,norm_set,line_set,nodelabel_set,Ecki,linmod);
-clear Ecki norm_set line_set n_model n_mode nodelabel_set
-%% 4.2. Строим граф модального взаимодействия для мод n_imode и n_jmode для модели n_model
-% По умолчанию строится абсолютное значение величины Eckij. Граф с учётом
-% знака можно построить используя скрипт only_MIgraph.m
-
+graphEvki(n_model,n_mode,norm_set,line_set,nodelabel_set,pki,linmod);
+clear pki norm_set line_set n_model n_mode nodelabel_set
+%% 4.5. Строим граф fkij
 norm_set = 1; % вариант нормирования величины выбранного параметра: 
 %                   1 - относительно максимума, определенного в пределах 
-%                       значений Evki для одной фиксированной матрицы А;
+%                       значений для одной фиксированной матрицы динамики;
 %                   0 - относительно максимума, определенного в пределах 
-%                       значений Evki для всех матриц А.
-n_model = 52; % задать порядковый номер линеаризованной модели из вектора n_mat
+%                       значений для всех матриц динамики;
+%                  [] - нормирование не выполняется
+nodelabel_set = 0; % вариант надписи в узлах: 
+%                   1 - в узлах отображаются номера узлов;
+%                   0 - в узлах отображаются величины выбранного параметра
+n_model = 50; % задать порядковый номер линеаризованной модели из вектора n_mat
 
 % выбрать нужный вариант нормировки и симметризации
-Eckij = LMA.Eckij;
-%Eckij = LMA.Eckij_sym;
-%Eckij = LMA.Eckij_norm;
-%Eckij = LMA.Eckij_norm_sym;
+%fkij = LMA.fkij_L2;
+fkij = LMA.fkij_L2_sym;
 
-graphEvkij(n_model,n_imode,n_jmode,norm_set,Eckij,linmod);
-clear Eckij norm_set n_model
+
+graphEvkij(n_model,n_imode,n_jmode,norm_set,nodelabel_set,fkij,linmod);
+clear fkij norm_set n_model nodelabel_set
+
 %% 5. Вычисляем параметры по "Методу Chompoo"
 % 5.1. Вычисляем параметры по "Методу Chompoo"
 clear Chompoo
@@ -257,23 +325,40 @@ clear n n_mode n_model norm_set nodelabel_set
 %% Eck [nodes, models]
 figure()
 plotEck = plot (linmod.var_par,LMA.Eck(:,:));
+%plotEck = plot (linmod.var_par,[zeros(68,1) diff(LMA.Eck,1,2)]);
+%plotEck = plot (linmod.var_par,LMA.Eck ./ LMA.Eck(:,1));
 grid minor
-title('L2-норма фазы напряжения по узлам')
+title('L2-норма амплитуды напряжения по узлам')
 for i = 1 : size(linmod.C.c_v,1,1)
     set(plotEck(i),'DisplayName',['Node',num2str(i)]);
 end
 
 %% Ecki [nodes, models, modes]
 figure()
-plotEcki = plot (linmod.var_par,squeeze(LMA.Ecki(40,:,:)));
+plotEcki = plot (linmod.var_par,squeeze(LMA.Ecki(51,:,:)));
+%plotEcki = plot (linmod.var_par,squeeze(LMA.Ecki_norm_sym(:,:,4) + LMA.Ecki_norm_sym(:,:,26)));
+%plotEcki = plot (linmod.var_par,squeeze(LMA.Ecki (:,:,26) ./ LMA.Eck));
+grid on
 grid minor
-title('Модальные вклады в узел 40')
-for i = 1 : linmod.number_of_mode%size(linmod.C.c_v,1,1)
+
+%title('Модальный вклад моды № 4')
+title('Модальные вклады мод в узле №51')
+%title('Сумма модальных вкладов мод М4 и М26 по узлам')
+for i = 1 : 167%size(linmod.C.c_v,1,1)
     set(plotEcki(i),'DisplayName',['Mode',num2str(i)]);
+end
+
+%% pki [nodes, models, modes]
+figure()
+plotEcki = plot (linmod.var_par,squeeze(LMA.pki_L2_sym(:,:,26)));
+grid minor
+title('Нормированный несимметризованный фактор модального вклада моды 26 по узлам')
+for i = 1 : size(linmod.C.c_v,1,1)
+    set(plotEcki(i),'DisplayName',['Node',num2str(i)]);
 end
 %% Eci [nodes, models, modes]
 figure()
-plotEcki = plot (linmod.var_par,squeeze(sum(LMA.Ecki,1)));
+plotEcki = plot (linmod.var_par,squeeze(sum(LMA.Ecki_norm_sym,1)));
 grid minor
 title('Суммарный модальный вклад каждой моды во все узлы')
 for i = 1 : linmod.number_of_mode
@@ -283,9 +368,19 @@ end
 %% Eckij [nodes, models]
 figure()
 plotEckij = plot (linmod.var_par,LMA.Eckij_sym);
+%plotEckij = plot (linmod.var_par,LMA.Eckij ./ LMA.Eck);
 grid minor
-title('Симмитризованное ненормированное модальное взаимодействие моды М4 с остальными в узле 50')
-for i = 1 : 167%size(linmod.C.c_v,1,1)
+title('Симмитризованное ненормированное модальное взаимодействие моды М4/М26 в узлах')
+for i = 1 : size(linmod.C.c_v,1,1)
+    set(plotEckij(i),'DisplayName',['Node',num2str(i)]);
+end
+
+%% fkij [nodes, models]
+figure()
+plotEckij = plot (linmod.var_par,LMA.fkij_L2_sym);
+grid minor
+title('Симметризованный фактор модального взаимодействия моды М4 с М26 в узлах')
+for i = 1 : size(linmod.C.c_v,1,1)
     set(plotEckij(i),'DisplayName',['Node',num2str(i)]);
 end
 %%                             ФУНКЦИИ
